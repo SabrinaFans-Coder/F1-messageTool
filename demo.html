@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F1 MessageTool - Design Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #020617;
+      --surface: #0F172A;
+      --surface-alt: #1E293B;
+      --accent: #22C55E;
+      --accent-hover: #16A34A;
+      --accent-bg: rgba(34,197,94,0.1);
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --border: #334155;
+      --danger: #EF4444;
+      --danger-bg: rgba(239,68,68,0.1);
+      --danger-border: rgba(239,68,68,0.2);
+      --warning: #F59E0B;
+      --card-hover: #1E293B;
+      --input-focus-shadow: rgba(34,197,94,0.15);
+    }
+    [data-theme="light"] {
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --surface-alt: #F1F5F9;
+      --accent: #16A34A;
+      --accent-hover: #15803D;
+      --accent-bg: rgba(22,163,74,0.08);
+      --text: #0F172A;
+      --text-muted: #64748B;
+      --border: #E2E8F0;
+      --danger: #DC2626;
+      --danger-bg: rgba(220,38,38,0.06);
+      --danger-border: rgba(220,38,38,0.15);
+      --warning: #D97706;
+      --card-hover: #F1F5F9;
+      --input-focus-shadow: rgba(22,163,74,0.2);
+    }
+
+    body {
+      font-family: 'Fira Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ===== NAVBAR ===== */
+    .navbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .navbar-brand {
+      font-family: 'Fira Code', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .navbar-brand .logo {
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--bg);
+    }
+    .navbar-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ===== THEME TOGGLE ===== */
+    .theme-toggle {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface-alt);
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 200ms;
+      margin-left: 8px;
+    }
+    .theme-toggle:hover { border-color: var(--accent); }
+    .theme-toggle svg { width: 18px; height: 18px; }
+    .theme-toggle .icon-sun { display: none; }
+    .theme-toggle .icon-moon { display: block; }
+    [data-theme="light"] .theme-toggle .icon-sun { display: block; }
+    [data-theme="light"] .theme-toggle .icon-moon { display: none; }
+    .nav-link {
+      font-family: 'Fira Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: all 200ms;
+      cursor: pointer;
+    }
+    .nav-link:hover { color: var(--text); background: var(--surface-alt); }
+    .nav-link.active { color: var(--accent); background: var(--accent-bg); }
+
+    /* ===== LAYOUT ===== */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .page-header {
+      margin-bottom: 24px;
+    }
+    .page-title {
+      font-family: 'Fira Code', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .page-subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* ===== SECTION LABELS ===== */
+    .section-label {
+      font-family: 'Fira Code', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 16px;
+      margin-top: 40px;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    /* ===== GRID ===== */
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 768px) {
+      .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 200ms;
+      cursor: pointer;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      background: var(--card-hover);
+    }
+
+    /* ===== RACE CARD ===== */
+    .race-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .race-round {
+      font-family: 'Fira Code', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--surface-alt);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .race-flag {
+      font-size: 24px;
+      line-height: 1;
+    }
+    .race-name {
+      font-family: 'Fira Code', monospace;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .race-location {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .race-date {
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .race-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-bg);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .race-live .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ===== RESULT CARD ===== */
+    .result-position {
+      font-family: 'Fira Code', monospace;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .result-position.p2 { color: var(--text); }
+    .result-position.p3 { color: var(--warning); }
+    .result-driver {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .result-team {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .result-time {
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* ===== DRIVER CARD ===== */
+    .driver-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .driver-number {
+      font-family: 'Fira Code', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 48px;
+    }
+    .driver-info { flex: 1; }
+    .driver-name {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .driver-team {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .driver-team-color {
+      width: 4px;
+      height: 36px;
+      border-radius: 2px;
+    }
+
+    /* ===== NOTE CARD ===== */
+    .note-tag {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent);
+      background: var(--accent-bg);
+      padding: 2px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    .note-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .note-preview {
+      font-size: 13px;
+      color: var(--text-muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .note-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      font-family: 'Fira Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 200ms;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary {
+      background: var(--surface-alt);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--text-muted); }
+    .btn-danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid var(--danger-border);
+    }
+    .btn-danger:hover { background: var(--danger-border); }
+
+    /* ===== FORM ===== */
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .form-input, .form-textarea, .form-select {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: 'Fira Sans', sans-serif;
+      font-size: 14px;
+      transition: border-color 200ms;
+    }
+    .form-input:focus, .form-textarea:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--input-focus-shadow);
+    }
+    .form-textarea { resize: vertical; min-height: 120px; }
+
+    /* ===== DIVIDER ===== */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 32px 0;
+    }
+
+    /* ===== COLOR SWATCHES ===== */
+    .color-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .swatch {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .swatch-color {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .swatch-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .swatch-hex {
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+    }
+
+    /* ===== TYPOGRAPHY DEMO ===== */
+    .type-demo {
+      margin-bottom: 24px;
+    }
+    .type-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    /* ===== COUNTDOWN ===== */
+    .countdown {
+      display: flex;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .countdown-item {
+      text-align: center;
+    }
+    .countdown-value {
+      font-family: 'Fira Code', monospace;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .countdown-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+    }
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 16px;
+      opacity: 0.4;
+    }
+    .empty-state p {
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="logo">F1</div>
+      <span>MessageTool</span>
+    </div>
+    <div class="navbar-links">
+      <a class="nav-link active" href="#calendar">Calendar</a>
+      <a class="nav-link" href="#results">Results</a>
+      <a class="nav-link" href="#notes">Notes</a>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- ===== SECTION: COLORS ===== -->
+    <div class="section-label">Color Palette - Dark</div>
+    <div class="color-row">
+      <div class="swatch">
+        <div class="swatch-color" style="background:#020617"></div>
+        <div><div class="swatch-hex">#020617</div><div class="swatch-label">Background</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#0F172A"></div>
+        <div><div class="swatch-hex">#0F172A</div><div class="swatch-label">Surface</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#1E293B"></div>
+        <div><div class="swatch-hex">#1E293B</div><div class="swatch-label">Surface Alt</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#22C55E"></div>
+        <div><div class="swatch-hex">#22C55E</div><div class="swatch-label">Accent</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#F8FAFC"></div>
+        <div><div class="swatch-hex">#F8FAFC</div><div class="swatch-label">Text</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#94A3B8"></div>
+        <div><div class="swatch-hex">#94A3B8</div><div class="swatch-label">Muted</div></div>
+      </div>
+    </div>
+    <div class="section-label">Color Palette - Light</div>
+    <div class="color-row">
+      <div class="swatch">
+        <div class="swatch-color" style="background:#F8FAFC"></div>
+        <div><div class="swatch-hex">#F8FAFC</div><div class="swatch-label">Background</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#FFFFFF"></div>
+        <div><div class="swatch-hex">#FFFFFF</div><div class="swatch-label">Surface</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#F1F5F9"></div>
+        <div><div class="swatch-hex">#F1F5F9</div><div class="swatch-label">Surface Alt</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#16A34A"></div>
+        <div><div class="swatch-hex">#16A34A</div><div class="swatch-label">Accent</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#0F172A"></div>
+        <div><div class="swatch-hex">#0F172A</div><div class="swatch-label">Text</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#64748B"></div>
+        <div><div class="swatch-hex">#64748B</div><div class="swatch-label">Muted</div></div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- ===== SECTION: TYPOGRAPHY ===== -->
+    <div class="section-label">Typography</div>
+    <div class="type-demo">
+      <div class="type-label">Heading - Fira Code 700</div>
+      <div class="page-title">Australian Grand Prix 2026</div>
+    </div>
+    <div class="type-demo">
+      <div class="type-label">Body - Fira Sans 400</div>
+      <p style="font-size:15px; color:var(--text-muted); max-width:600px;">
+        The 2026 Formula 1 season features new power unit regulations with increased electrical
+        deployment and sustainable fuels. Track the full calendar, results, and jot down your
+        race observations all in one place.
+      </p>
+    </div>
+    <div class="type-demo">
+      <div class="type-label">Monospace - Fira Code 400</div>
+      <p style="font-family:'Fira Code',monospace; font-size:13px; color:var(--text-muted);">
+        session_key: 11291 | driver: NOR | position: P1 | gap: +0.000s
+      </p>
+    </div>
+
+    <hr class="divider">
+
+    <!-- ===== SECTION: NEXT RACE ===== -->
+    <div class="section-label">Next Race - Countdown Widget</div>
+    <div class="card" style="max-width:480px;">
+      <div class="race-card-header">
+        <span class="race-round">RND 10</span>
+        <span class="race-live"><span class="dot"></span> UPCOMING</span>
+      </div>
+      <div class="race-name">British Grand Prix</div>
+      <div class="race-location">Silverstone, United Kingdom</div>
+      <div class="race-date">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Jul 4 - Jul 6, 2026
+      </div>
+      <div class="countdown">
+        <div class="countdown-item"><div class="countdown-value">31</div><div class="countdown-label">Days</div></div>
+        <div class="countdown-item"><div class="countdown-value">08</div><div class="countdown-label">Hours</div></div>
+        <div class="countdown-item"><div class="countdown-value">42</div><div class="countdown-label">Mins</div></div>
+        <div class="countdown-item"><div class="countdown-value">15</div><div class="countdown-label">Secs</div></div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- ===== SECTION: CALENDAR ===== -->
+    <div class="section-label" id="calendar">Calendar Page</div>
+    <div class="page-header">
+      <div class="page-title">2026 Race Calendar</div>
+      <div class="page-subtitle">24 rounds across the globe</div>
+    </div>
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="race-card-header">
+          <span class="race-round">RND 1</span>
+          <span class="race-flag">&#127482;&#127462;</span>
+        </div>
+        <div class="race-name">Australian Grand Prix</div>
+        <div class="race-location">Melbourne, Australia</div>
+        <div class="race-date">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Mar 6 - Mar 8
+        </div>
+      </div>
+      <div class="card">
+        <div class="race-card-header">
+          <span class="race-round">RND 2</span>
+          <span class="race-flag">&#127479;&#127482;</span>
+        </div>
+        <div class="race-name">Bahrain Grand Prix</div>
+        <div class="race-location">Sakhir, Bahrain</div>
+        <div class="race-date">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Mar 13 - Mar 15
+        </div>
+      </div>
+      <div class="card">
+        <div class="race-card-header">
+          <span class="race-round">RND 3</span>
+          <span class="race-flag">&#127481;&#127475;</span>
+        </div>
+        <div class="race-name">Japanese Grand Prix</div>
+        <div class="race-location">Suzuka, Japan</div>
+        <div class="race-date">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Apr 3 - Apr 5
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- ===== SECTION: RESULTS ===== -->
+    <div class="section-label" id="results">Results Page</div>
+    <div class="page-header">
+      <div class="page-title">Monaco Grand Prix</div>
+      <div class="page-subtitle">Race Results &middot; May 24, 2026</div>
+    </div>
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="result-position">P1</div>
+        <div class="result-driver">George Russell</div>
+        <div class="result-team">Mercedes</div>
+        <div class="result-time">1:32:45.123</div>
+      </div>
+      <div class="card">
+        <div class="result-position p2">P2</div>
+        <div class="result-driver">Charles Leclerc</div>
+        <div class="result-team">Ferrari</div>
+        <div class="result-time">+2.345s</div>
+      </div>
+      <div class="card">
+        <div class="result-position p3">P3</div>
+        <div class="result-driver">Lando Norris</div>
+        <div class="result-team">McLaren</div>
+        <div class="result-time">+5.678s</div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:24px;">Current Grid</div>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="driver-card">
+          <div class="driver-team-color" style="background:#F47600"></div>
+          <div class="driver-number">4</div>
+          <div class="driver-info">
+            <div class="driver-name">Lando Norris</div>
+            <div class="driver-team">McLaren</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="driver-card">
+          <div class="driver-team-color" style="background:#4781D7"></div>
+          <div class="driver-number">1</div>
+          <div class="driver-info">
+            <div class="driver-name">Max Verstappen</div>
+            <div class="driver-team">Red Bull Racing</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="driver-card">
+          <div class="driver-team-color" style="background:#E8002D"></div>
+          <div class="driver-number">16</div>
+          <div class="driver-info">
+            <div class="driver-name">Charles Leclerc</div>
+            <div class="driver-team">Ferrari</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="driver-card">
+          <div class="driver-team-color" style="background:#6CD3BF"></div>
+          <div class="driver-number">63</div>
+          <div class="driver-info">
+            <div class="driver-name">George Russell</div>
+            <div class="driver-team">Mercedes</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- ===== SECTION: NOTES ===== -->
+    <div class="section-label" id="notes">Notes Page</div>
+    <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div>
+        <div class="page-title">My Notes</div>
+        <div class="page-subtitle">Race observations and thoughts</div>
+      </div>
+      <button class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Note
+      </button>
+    </div>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="note-tag">Race</div>
+        <div class="note-title">Monaco GP - Strategy Thoughts</div>
+        <div class="note-preview">Russell's one-stop strategy was brilliant. Leclerc pitted too early and lost track position in the tunnel section. The undercut didn't work because...</div>
+        <div class="note-meta">
+          <span>May 24, 2026</span>
+          <span>Monaco GP</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="note-tag">Driver</div>
+        <div class="note-title">Norris Season Analysis</div>
+        <div class="note-preview">Consistent podium finishes in the first 9 races. Qualifying pace has improved significantly since the Miami upgrade package. Watch for...</div>
+        <div class="note-meta">
+          <span>May 20, 2026</span>
+          <span>Lando Norris</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="note-tag">General</div>
+        <div class="note-title">2026 Regulation Impact</div>
+        <div class="note-preview">The new power unit regs with 50/50 ICE-electric split are shaking up the order. Mercedes seems to have the best hybrid integration so far...</div>
+        <div class="note-meta">
+          <span>May 15, 2026</span>
+          <span>General</span>
+        </div>
+      </div>
+      <div class="card" style="display:flex; align-items:center; justify-content:center; min-height:140px;">
+        <div class="empty-state" style="padding:0;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          <p style="margin:0;">Create your first note</p>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- ===== SECTION: NOTE EDITOR ===== -->
+    <div class="section-label">Note Editor</div>
+    <div class="card" style="max-width:640px;">
+      <div class="form-group">
+        <label class="form-label">Title</label>
+        <input class="form-input" type="text" placeholder="e.g. Monaco GP - Strategy Thoughts" />
+      </div>
+      <div style="display:flex; gap:12px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Tag</label>
+          <select class="form-select">
+            <option>Race</option>
+            <option>Driver</option>
+            <option>General</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Linked Race (optional)</label>
+          <select class="form-select">
+            <option value="">None</option>
+            <option>Monaco Grand Prix</option>
+            <option>British Grand Prix</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Content</label>
+        <textarea class="form-textarea" placeholder="Write your race observations..."></textarea>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button class="btn btn-secondary">Cancel</button>
+        <button class="btn btn-primary">Save Note</button>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- ===== SECTION: BUTTONS ===== -->
+    <div class="section-label">Buttons</div>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
+      <button class="btn btn-primary">Primary Action</button>
+      <button class="btn btn-secondary">Secondary</button>
+      <button class="btn btn-danger">Delete</button>
+    </div>
+
+    <!-- ===== SECTION: EMPTY STATE ===== -->
+    <div class="section-label">Empty State</div>
+    <div class="card" style="max-width:400px;">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <p>No results found for this session</p>
+        <button class="btn btn-secondary">Back to Calendar</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="height:80px;"></div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('f1-theme', next);
+    }
+
+    // Load saved theme on init
+    (function() {
+      const saved = localStorage.getItem('f1-theme');
+      if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+      }
+    })();
+  </script>
+
+</body>
+</html>

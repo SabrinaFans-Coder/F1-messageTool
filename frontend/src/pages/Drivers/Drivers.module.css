@@ -1,0 +1,64 @@
+.header {
+  margin-bottom: 24px;
+}
+
+.title {
+  font-family: 'Fira Code', monospace;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.teamSection {
+  margin-bottom: 32px;
+}
+
+.teamHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.teamColorBar {
+  width: 4px;
+  height: 20px;
+  border-radius: 2px;
+}
+
+.teamName {
+  font-family: 'Fira Code', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.driverGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .driverGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.loading {
+  text-align: center;
+  padding: 48px;
+  color: var(--text-muted);
+}
+
+.error {
+  text-align: center;
+  padding: 48px;
+  color: var(--danger);
+}
