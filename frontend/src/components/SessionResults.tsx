@@ -80,7 +80,8 @@ export default function SessionResults({ years, sprintResults }: Props) {
               year: 'numeric',
             })}
           </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 400 }}>
             <tbody>
               {currentYear.results.map((entry: RaceResultEntry) => {
                 const teamColor = entry.team_colour ? `#${entry.team_colour}` : 'var(--border)';
@@ -134,6 +135,7 @@ export default function SessionResults({ years, sprintResults }: Props) {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -153,7 +155,8 @@ export default function SessionResults({ years, sprintResults }: Props) {
           >
             Sprint
           </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 400 }}>
             <tbody>
               {sprintResults.map((entry: RaceResultEntry) => {
                 const teamColor = entry.team_colour ? `#${entry.team_colour}` : 'var(--border)';
@@ -207,6 +210,7 @@ export default function SessionResults({ years, sprintResults }: Props) {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

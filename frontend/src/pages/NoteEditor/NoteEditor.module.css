@@ -57,6 +57,20 @@
   margin-top: 24px;
 }
 
+@media (max-width: 768px) {
+  .row {
+    flex-direction: column;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .btn {
+    justify-content: center;
+  }
+}
+
 .btn {
   font-family: 'Fira Sans', sans-serif;
   font-size: 14px;

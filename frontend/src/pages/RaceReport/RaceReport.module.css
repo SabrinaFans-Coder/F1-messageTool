@@ -38,6 +38,17 @@
   color: var(--text-muted);
 }
 
+@media (max-width: 768px) {
+  .meetingName {
+    font-size: 22px;
+  }
+
+  .circuitImageWrap {
+    max-width: 100%;
+    height: 120px;
+  }
+}
+
 .circuitImageWrap {
   width: 100%;
   max-width: 320px;

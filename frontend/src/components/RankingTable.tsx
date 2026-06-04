@@ -39,7 +39,8 @@ export default function RankingTable({ title, subtitle, rankings, showRaces, onD
           </div>
         )}
       </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: showRaces ? 500 : 400 }}>
         <thead>
           <tr
             style={{
@@ -142,6 +143,7 @@ export default function RankingTable({ title, subtitle, rankings, showRaces, onD
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

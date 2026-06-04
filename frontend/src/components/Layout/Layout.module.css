@@ -2,7 +2,7 @@
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   padding: 0 24px;
-  height: 60px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -13,7 +13,7 @@
 
 .brand {
   font-family: 'Fira Code', monospace;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text);
   display: flex;
@@ -35,7 +35,7 @@
   color: var(--bg);
 }
 
-.nav {
+.desktopNav {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -81,8 +81,91 @@
   border-color: var(--accent);
 }
 
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.hamburger:hover {
+  background: var(--surface-alt);
+}
+
+.mobileMenu {
+  display: none;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  position: sticky;
+  top: 56px;
+  z-index: 49;
+}
+
+.mobileLink {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: all 150ms;
+}
+
+.mobileLink:hover {
+  color: var(--text);
+  background: var(--surface-alt);
+}
+
+.mobileThemeToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  font-size: 14px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.mobileThemeToggle:hover {
+  color: var(--text);
+  background: var(--surface-alt);
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 16px;
+  }
+
+  .desktopNav {
+    display: none;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+
+  .mobileMenu {
+    display: block;
+  }
+
+  .container {
+    padding: 16px;
+  }
 }

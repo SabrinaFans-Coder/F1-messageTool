@@ -99,6 +99,26 @@
     flex-direction: column;
     text-align: center;
   }
+
+  .headshot,
+  .headshotPlaceholder {
+    width: 96px;
+    height: 96px;
+  }
+
+  .driverName {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .raceRow {
+    padding: 10px 12px;
+  }
 }
 
 .statCard {
