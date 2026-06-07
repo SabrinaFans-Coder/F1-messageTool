@@ -339,11 +339,11 @@ public class F1ProxyController {
     private java.util.Map<Integer, java.util.Map<String, Object>> fetchOpenF1DriverMap() {
         try {
             String latestJson = openF1Service.fetchLatestRaceSession();
-            java.util.List<java.util.Map<String, Object>> sessions =
+            java.util.Map<String, Object> session =
                     objectMapper.readValue(latestJson, new TypeReference<>() {});
-            if (sessions.isEmpty()) return java.util.Map.of();
+            if (session == null || session.isEmpty()) return java.util.Map.of();
 
-            int latestKey = ((Number) sessions.get(0).get("session_key")).intValue();
+            int latestKey = ((Number) session.get("session_key")).intValue();
             String driversJson = openF1Service.fetchDrivers(latestKey);
             java.util.List<java.util.Map<String, Object>> drivers =
                     objectMapper.readValue(driversJson, new TypeReference<>() {});
