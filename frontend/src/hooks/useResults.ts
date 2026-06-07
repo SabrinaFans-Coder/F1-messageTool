@@ -12,17 +12,10 @@ export function useResults() {
     let cancelled = false;
     setLoading(true);
 
-    fetchJson<Session[] | Session>('/f1/sessions/latest')
+    fetchJson<Session | Session[]>('/f1/sessions/latest')
       .then((raw) => {
         if (cancelled) return;
-        const sessions = Array.isArray(raw) ? raw : [raw];
-        if (!sessions.length) return;
-        // Find the latest past race session
-        const now = new Date();
-        const pastSessions = sessions
-          .filter((s) => s.session_name === 'Race' && new Date(s.date_start) <= now)
-          .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime());
-        const session = pastSessions[0] ?? sessions[sessions.length - 1];
+        const session = Array.isArray(raw) ? raw[0] : raw;
         if (!session?.session_key) return;
         setLatestSession(session);
         return fetchJson<Position[]>(`/f1/positions?sessionKey=${session.session_key}`);

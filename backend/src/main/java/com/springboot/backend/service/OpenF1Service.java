@@ -60,14 +60,38 @@ public class OpenF1Service {
     }
 
     /**
-     * 获取当前年份的比赛会话列表
+     * 获取最近一场已结束的比赛会话
      *
-     * @return 会话列表 JSON 字符串
+     * @return 最新会话 JSON 字符串（单个对象）
      */
     public String fetchLatestRaceSession() {
         int year = java.time.Year.now().getValue();
         String cacheKey = "sessions_year_" + year;
-        return getFromCacheOrFetch(cacheKey, "/sessions?session_type=Race&year=" + year);
+        String json = getFromCacheOrFetch(cacheKey, "/sessions?session_type=Race&year=" + year);
+
+        // 从列表中筛选最近一场已结束的正赛
+        try {
+            var list = objectMapper.readValue(json, new com.fasterxml.jackson.core.type.TypeReference<java.util.List<java.util.Map<String, Object>>>() {});
+            var now = java.time.Instant.now();
+            return list.stream()
+                    .filter(s -> "Race".equals(s.get("session_name")))
+                    .filter(s -> {
+                        try {
+                            var dateStr = (String) s.get("date_start");
+                            return dateStr != null && java.time.Instant.parse(dateStr).isBefore(now);
+                        } catch (Exception e) { return false; }
+                    })
+                    .max(java.util.Comparator.comparing(s -> {
+                        try {
+                            return java.time.Instant.parse((String) ((java.util.Map<String, Object>) s).get("date_start"));
+                        } catch (Exception e) { return java.time.Instant.MIN; }
+                    }))
+                    .map(s -> objectMapper.writeValueAsString(s))
+                    .orElse("[]");
+        } catch (Exception e) {
+            log.warn("解析会话列表失败，返回原始数据", e);
+            return json;
+        }
     }
 
     /**
