@@ -60,13 +60,14 @@ public class OpenF1Service {
     }
 
     /**
-     * 获取最新比赛会话
+     * 获取当前年份的比赛会话列表
      *
-     * @return 最新会话 JSON 字符串
+     * @return 会话列表 JSON 字符串
      */
     public String fetchLatestRaceSession() {
-        String cacheKey = "sessions_latest";
-        return getFromCacheOrFetch(cacheKey, "/sessions?session_type=Race&session_key=latest");
+        int year = java.time.Year.now().getValue();
+        String cacheKey = "sessions_year_" + year;
+        return getFromCacheOrFetch(cacheKey, "/sessions?session_type=Race&year=" + year);
     }
 
     /**
