@@ -71,7 +71,8 @@ public class OpenF1Service {
 
         // 从列表中筛选最近一场已结束的正赛
         try {
-            var list = objectMapper.readValue(json, new com.fasterxml.jackson.core.type.TypeReference<java.util.List<java.util.Map<String, Object>>>() {});
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            var list = mapper.readValue(json, new com.fasterxml.jackson.core.type.TypeReference<java.util.List<java.util.Map<String, Object>>>() {});
             var now = java.time.Instant.now();
             return list.stream()
                     .filter(s -> "Race".equals(s.get("session_name")))
@@ -86,7 +87,10 @@ public class OpenF1Service {
                             return java.time.Instant.parse((String) ((java.util.Map<String, Object>) s).get("date_start"));
                         } catch (Exception e) { return java.time.Instant.MIN; }
                     }))
-                    .map(s -> objectMapper.writeValueAsString(s))
+                    .map(s -> {
+                        try { return mapper.writeValueAsString(s); }
+                        catch (Exception e) { return "[]"; }
+                    })
                     .orElse("[]");
         } catch (Exception e) {
             log.warn("解析会话列表失败，返回原始数据", e);
