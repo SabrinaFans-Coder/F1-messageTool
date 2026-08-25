@@ -153,6 +153,13 @@
     padding: 0 16px;
   }
 
+  .hamburger {
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+  }
+
   .desktopNav {
     display: none;
   }

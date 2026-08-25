@@ -48,33 +48,6 @@ export interface Position {
   session_key: number;
 }
 
-export interface Note {
-  id: number;
-  title: string;
-  content: string;
-  tag: string;
-  raceName: string | null;
-  driverName: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface NoteCreateRequest {
-  title: string;
-  content: string;
-  tag: string;
-  raceName?: string;
-  driverName?: string;
-}
-
-export interface NoteUpdateRequest {
-  title?: string;
-  content?: string;
-  tag?: string;
-  raceName?: string;
-  driverName?: string;
-}
-
 export interface FavoriteDriver {
   id: number;
   driverNumber: number;
@@ -173,4 +146,40 @@ export interface SeasonStandings {
   racesCount: number;
   driverRankings: DriverRanking[];
   constructorRankings: ConstructorRanking[];
+}
+
+export interface NewsEntry {
+  id: number;
+  source: string;
+  title: string;
+  summary: string | null;
+  sourceUrl: string;
+  coverImage: string | null;
+  category: string;
+  publishedAt: string;
+}
+
+export interface NewsPage {
+  content: NewsEntry[];
+  page: {
+    number: number;
+    totalPages: number;
+    totalElements: number;
+  };
+}
+
+export interface PointsTrendDriver {
+  driver_number: number;
+  driver_name: string;
+  name_acronym: string;
+  team_name: string;
+  team_colour: string;
+  points: number[];
+}
+
+export interface PointsTrend {
+  year: number;
+  estimated: boolean;
+  rounds: string[];
+  drivers: PointsTrendDriver[];
 }

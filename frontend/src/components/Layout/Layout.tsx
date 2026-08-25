@@ -20,16 +20,25 @@ export default function Layout() {
 
         <div className={styles.desktopNav}>
           <NavLink to="/" end className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}>
+            Home
+          </NavLink>
+          <NavLink to="/calendar" className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}>
             Calendar
+          </NavLink>
+          <NavLink to="/news" className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}>
+            News
           </NavLink>
           <NavLink to="/results" className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}>
             Results
           </NavLink>
+          <NavLink to="/trends" className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}>
+            Trends
+          </NavLink>
           <NavLink to="/drivers" className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}>
             Drivers
           </NavLink>
-          <NavLink to="/notes" className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}>
-            Notes
+          <NavLink to="/teams" className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}>
+            Teams
           </NavLink>
           <button className={styles.themeToggle} onClick={toggleTheme} aria-label="Toggle theme">
             {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
@@ -44,16 +53,25 @@ export default function Layout() {
       {menuOpen && (
         <div className={styles.mobileMenu}>
           <NavLink to="/" end className={({ isActive }) => `${styles.mobileLink} ${isActive ? styles.active : ''}`} onClick={closeMenu}>
+            Home
+          </NavLink>
+          <NavLink to="/calendar" className={({ isActive }) => `${styles.mobileLink} ${isActive ? styles.active : ''}`} onClick={closeMenu}>
             Calendar
+          </NavLink>
+          <NavLink to="/news" className={({ isActive }) => `${styles.mobileLink} ${isActive ? styles.active : ''}`} onClick={closeMenu}>
+            News
           </NavLink>
           <NavLink to="/results" className={({ isActive }) => `${styles.mobileLink} ${isActive ? styles.active : ''}`} onClick={closeMenu}>
             Results
           </NavLink>
+          <NavLink to="/trends" className={({ isActive }) => `${styles.mobileLink} ${isActive ? styles.active : ''}`} onClick={closeMenu}>
+            Trends
+          </NavLink>
           <NavLink to="/drivers" className={({ isActive }) => `${styles.mobileLink} ${isActive ? styles.active : ''}`} onClick={closeMenu}>
             Drivers
           </NavLink>
-          <NavLink to="/notes" className={({ isActive }) => `${styles.mobileLink} ${isActive ? styles.active : ''}`} onClick={closeMenu}>
-            Notes
+          <NavLink to="/teams" className={({ isActive }) => `${styles.mobileLink} ${isActive ? styles.active : ''}`} onClick={closeMenu}>
+            Teams
           </NavLink>
           <button className={styles.mobileThemeToggle} onClick={toggleTheme}>
             {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}

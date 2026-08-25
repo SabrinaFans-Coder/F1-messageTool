@@ -6,8 +6,8 @@ const client = axios.create({
   timeout: 10000,
 });
 
-export async function fetchJson<T>(path: string): Promise<T> {
-  const response = await client.get<Result<T>>(path);
+export async function fetchJson<T>(path: string, config?: { timeout?: number }): Promise<T> {
+  const response = await client.get<Result<T>>(path, config);
   if (response.data.code !== 200) {
     throw new Error(response.data.message);
   }

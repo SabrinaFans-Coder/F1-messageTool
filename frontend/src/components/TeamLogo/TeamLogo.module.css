@@ -1,0 +1,11 @@
+.logo {
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fira Code', monospace;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  object-fit: contain;
+}

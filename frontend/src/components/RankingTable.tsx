@@ -1,4 +1,5 @@
 import type { DriverRanking } from '../types';
+import { resolveTeamColour } from '../lib/teamColours';
 
 interface Props {
   title: string;
@@ -60,7 +61,7 @@ export default function RankingTable({ title, subtitle, rankings, showRaces, onD
         </thead>
         <tbody>
           {rankings.map((r, i) => {
-            const teamColor = r.team_colour ? `#${r.team_colour}` : 'var(--border)';
+            const teamColor = resolveTeamColour(r.team_name, r.team_colour);
             return (
               <tr
                 key={r.driver_number}
