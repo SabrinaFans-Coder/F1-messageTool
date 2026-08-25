@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSeasonStandings } from '../../hooks/useSeasonStandings';
+import { useSeasonRankings } from '../../hooks/useSeasonRankings';
 import { useResults } from '../../hooks/useResults';
 import { useDrivers } from '../../hooks/useDrivers';
 import ResultCard from '../../components/ResultCard';
@@ -19,13 +20,19 @@ export default function Results() {
   const { positions, latestSession, loading: resultsLoading, error: resultsError } = useResults();
   const { drivers } = useDrivers(latestSession?.session_key ?? null);
   const { standings, loading: standingsLoading, error: standingsError } = useSeasonStandings(selectedYear);
+  // Jolpica 官方榜不含 Podiums，从逐轮统计合并（仅当前赛季）
+  const { rankings } = useSeasonRankings(selectedYear, 30);
+  const podiumMap = new Map((selectedYear === 2026 ? (rankings?.rankings ?? []) : []).map((r) => [r.driver_number, r.podiums]));
 
   const driverMap = new Map<number, Driver>();
   drivers.forEach((d) => driverMap.set(d.driver_number, d));
 
   const top3 = positions.slice(0, 3);
 
-  const driverStandings: DriverRanking[] = standings?.driverRankings ?? [];
+  const driverStandings: DriverRanking[] = (standings?.driverRankings ?? []).map((r) => ({
+    ...r,
+    podiums: podiumMap.get(r.driver_number) ?? r.podiums,
+  }));
 
   const constructorStandings: DriverRanking[] = (standings?.constructorRankings ?? []).map((r) => ({
     driver_number: 0,
