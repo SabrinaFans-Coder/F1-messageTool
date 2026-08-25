@@ -2,13 +2,24 @@ spring:
   application:
     name: f1-message-tool
   datasource:
-    url: jdbc:mysql://localhost:3306/F1_message?serverTimezone=Asia/Shanghai
-    username: root
+    url: jdbc:postgresql://localhost:5432/f1_message
+    username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: false
 server:
   port: 8080
+
+news:
+  sync-enabled: true
+  rss:
+    feeds:
+      - name: Autosport F1
+        url: https://www.autosport.com/rss/f1/news/
+      - name: Motorsport.com F1
+        url: https://www.motorsport.com/rss/f1/news/
+      - name: BBC Sport F1
+        url: https://feeds.bbci.co.uk/sport/formula1/rss.xml
