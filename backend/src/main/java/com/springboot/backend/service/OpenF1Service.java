@@ -54,6 +54,18 @@ public class OpenF1Service {
      * @param year 赛季年份
      * @return 会话列表 JSON 字符串
      */
+    /**
+     * 获取指定赛季的全部正赛场次（排除练习赛/排位赛）
+     *
+     * @param year 赛季年份
+     * @return 正赛场次列表 JSON 字符串
+     */
+    public String fetchRaceSessions(int year) {
+        String cacheKey = "sessions_race_" + year;
+        return getFromCacheOrFetch(cacheKey,
+                "/sessions?year=" + year + "&session_type=Race&session_name=Race");
+    }
+
     public String fetchSessions(int year) {
         String cacheKey = "sessions_" + year;
         return getFromCacheOrFetch(cacheKey, "/sessions?year=" + year);
@@ -328,116 +340,6 @@ public class OpenF1Service {
             log.error("获取赛道历史数据失败, meetingKey: {}", meetingKey, exception);
             throw new com.springboot.backend.common.BusinessException(
                     "获取赛道历史数据失败，meetingKey: " + meetingKey, exception);
-        }
-    }
-
-    /**
-     * 获取赛季近期排名（最近N场正赛）
-     *
-     * @param year 赛季年份
-     * @param limit 场次数量
-     * @return 赛季排名 JSON 字符串
-     */
-    public String fetchSeasonRankings(int year, int limit) {
-        String cacheKey = "season_rankings_" + year + "_" + limit;
-        CacheEntry cached = cache.get(cacheKey);
-        if (cached != null && !cached.isExpired()) {
-            log.debug("缓存命中, cacheKey: {}", cacheKey);
-            return cached.data;
-        }
-
-        log.info("获取赛季排名, year: {}, limit: {}", year, limit);
-        try {
-            String sessionsJson = fetchWithRetry("/sessions?year=" + year + "&session_type=Race&session_name=Race");
-
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            java.util.List<java.util.Map<String, Object>> sessions = mapper.readValue(
-                    sessionsJson, new com.fasterxml.jackson.core.type.TypeReference<>() {});
-
-            sessions = filterPastSessions(sessions);
-
-            sessions.sort((a, b) -> {
-                String dateA = (String) a.getOrDefault("date_start", "");
-                String dateB = (String) b.getOrDefault("date_start", "");
-                return dateB.compareTo(dateA);
-            });
-
-            java.util.List<java.util.Map<String, Object>> recentSessions = sessions.subList(
-                    0, Math.min(limit, sessions.size()));
-
-            int[] pointsTable = {25, 18, 15, 12, 10, 8, 6, 4, 2, 1};
-            java.util.Map<Integer, java.util.Map<String, Object>> driverStats = new java.util.LinkedHashMap<>();
-
-            for (java.util.Map<String, Object> session : recentSessions) {
-                int sessionKey = ((Number) session.get("session_key")).intValue();
-
-                    String positionsJson = fetchWithRetry("/position?session_key=" + sessionKey);
-
-                java.util.List<java.util.Map<String, Object>> positions = mapper.readValue(
-                        positionsJson, new com.fasterxml.jackson.core.type.TypeReference<>() {});
-
-                java.util.Map<Integer, java.util.Map<String, Object>> latestByDriver = new java.util.LinkedHashMap<>();
-                for (java.util.Map<String, Object> pos : positions) {
-                    int driverNum = ((Number) pos.get("driver_number")).intValue();
-                    latestByDriver.put(driverNum, pos);
-                }
-
-                    String driversJson = fetchWithRetry("/drivers?session_key=" + sessionKey);
-
-                java.util.List<java.util.Map<String, Object>> drivers = mapper.readValue(
-                        driversJson, new com.fasterxml.jackson.core.type.TypeReference<>() {});
-
-                java.util.Map<Integer, java.util.Map<String, Object>> driverInfo = new java.util.LinkedHashMap<>();
-                for (java.util.Map<String, Object> d : drivers) {
-                    int num = ((Number) d.get("driver_number")).intValue();
-                    driverInfo.put(num, d);
-                }
-
-                for (java.util.Map<String, Object> pos : latestByDriver.values()) {
-                    int driverNum = ((Number) pos.get("driver_number")).intValue();
-                    int position = ((Number) pos.get("position")).intValue();
-                    java.util.Map<String, Object> info = driverInfo.getOrDefault(driverNum, java.util.Map.of());
-
-                    int points = (position >= 1 && position <= 10) ? pointsTable[position - 1] : 0;
-                    java.util.Map<String, Object> stats = driverStats.computeIfAbsent(driverNum, k -> {
-                        java.util.Map<String, Object> s = new java.util.LinkedHashMap<>();
-                        s.put("driver_number", k);
-                        s.put("driver_name", info.getOrDefault("full_name", "Unknown"));
-                        s.put("name_acronym", info.getOrDefault("name_acronym", "???"));
-                        s.put("team_name", info.getOrDefault("team_name", "Unknown"));
-                        s.put("team_colour", info.getOrDefault("team_colour", "888888"));
-                        s.put("totalPoints", 0);
-                        s.put("wins", 0);
-                        s.put("podiums", 0);
-                        return s;
-                    });
-                    stats.put("totalPoints", ((Number) stats.get("totalPoints")).intValue() + points);
-                    if (position == 1) stats.put("wins", ((Number) stats.get("wins")).intValue() + 1);
-                    if (position <= 3) stats.put("podiums", ((Number) stats.get("podiums")).intValue() + 1);
-                }
-            }
-
-            java.util.List<java.util.Map<String, Object>> rankings = new java.util.ArrayList<>(driverStats.values());
-            rankings.sort((a, b) -> Integer.compare(
-                    ((Number) b.get("totalPoints")).intValue(), ((Number) a.get("totalPoints")).intValue()));
-
-            for (int i = 0; i < rankings.size(); i++) {
-                rankings.get(i).put("position", i + 1);
-            }
-
-            java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
-            result.put("year", year);
-            result.put("racesCount", recentSessions.size());
-            result.put("rankings", rankings);
-
-            String json = mapper.writeValueAsString(result);
-            cache.put(cacheKey, new CacheEntry(json));
-            log.info("赛季排名获取完成, year: {}, races: {}", year, recentSessions.size());
-            return json;
-        } catch (Exception exception) {
-            log.error("获取赛季排名失败, year: {}", year, exception);
-            throw new com.springboot.backend.common.BusinessException(
-                    "获取赛季排名失败，year: " + year, exception);
         }
     }
 
@@ -782,6 +684,8 @@ public class OpenF1Service {
                     }
                 }
             }
+
+            java.util.Collections.reverse(raceResults);
 
             // 4. Compute rank for target driver
             java.util.List<java.util.Map<String, Object>> allStats = new java.util.ArrayList<>(allDriverStats.values());

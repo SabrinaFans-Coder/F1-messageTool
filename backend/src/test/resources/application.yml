@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    # 测试环境默认连本机 Docker PG（宿主机端口 5433），可用环境变量覆盖
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/f1_message}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}

@@ -3,6 +3,10 @@ package com.springboot.backend.controller;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.springboot.backend.common.Result;
+import java.util.List;
+import java.util.Map;
+
+import com.springboot.backend.service.F1QueryService;
 import com.springboot.backend.service.JolpicaService;
 import com.springboot.backend.service.OpenF1Service;
 import lombok.RequiredArgsConstructor;
@@ -25,10 +29,11 @@ public class F1ProxyController {
     private final OpenF1Service openF1Service;
     private final JolpicaService jolpicaService;
     private final ObjectMapper objectMapper;
+    private final F1QueryService f1QueryService;
 
     @GetMapping("/meetings")
     public Result<Object> queryMeetings(@RequestParam(defaultValue = "2026") int year) throws Exception {
-        String json = openF1Service.fetchMeetings(year);
+        String json = f1QueryService.getMeetings(year);
         return Result.success(objectMapper.readValue(json, new TypeReference<>() {}));
     }
 
@@ -40,7 +45,7 @@ public class F1ProxyController {
 
     @GetMapping("/sessions/latest")
     public Result<Object> queryLatestRaceSession() throws Exception {
-        String json = openF1Service.fetchLatestRaceSession();
+        String json = f1QueryService.getLatestSession();
         return Result.success(objectMapper.readValue(json, new TypeReference<>() {}));
     }
 
@@ -52,7 +57,7 @@ public class F1ProxyController {
 
     @GetMapping("/positions")
     public Result<Object> queryPositions(@RequestParam int sessionKey) throws Exception {
-        String json = openF1Service.fetchPositions(sessionKey);
+        String json = f1QueryService.getPositions(sessionKey);
         return Result.success(objectMapper.readValue(json, new TypeReference<>() {}));
     }
 
@@ -66,8 +71,26 @@ public class F1ProxyController {
     public Result<Object> querySeasonRankings(
             @RequestParam(defaultValue = "2026") int year,
             @RequestParam(defaultValue = "5") int limit) throws Exception {
-        String json = openF1Service.fetchSeasonRankings(year, limit);
+        String json = f1QueryService.getSeasonRankings(year, limit);
         return Result.success(objectMapper.readValue(json, new TypeReference<>() {}));
+    }
+
+    @GetMapping("/points-trend")
+    public Result<Object> queryPointsTrend(
+            @RequestParam(defaultValue = "2026") int year,
+            @RequestParam(defaultValue = "10") int top) throws Exception {
+        String allJson = f1QueryService.getAllDriversPointsTrend(year);
+        com.fasterxml.jackson.databind.JsonNode root = objectMapper.readTree(allJson);
+        java.util.List<Object> drivers = new java.util.ArrayList<>();
+        root.get("drivers").forEach(node -> {
+            if (drivers.size() < Math.max(top, 1)) drivers.add(node);
+        });
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("year", year);
+        result.put("estimated", true);
+        result.put("rounds", objectMapper.convertValue(root.get("rounds"), List.class));
+        result.put("drivers", drivers);
+        return Result.success(result);
     }
 
     @GetMapping("/season-standings")
@@ -310,14 +333,21 @@ public class F1ProxyController {
         java.util.Map<Integer, java.util.Map<String, Object>> openF1Drivers = fetchOpenF1DriverMap();
         java.util.Map<String, Object> oF1 = openF1Drivers.getOrDefault(driverNumber, java.util.Map.of());
 
-        // 4. 构造响应
+        // 4. 构造响应（Jolpica 不提供登台数，从逐场结果中统计）
+        int podiumCount = 0;
+        for (java.util.Map<String, Object> r : raceResults) {
+            if ((Integer) r.get("position") <= 3) {
+                podiumCount++;
+            }
+        }
         java.util.Map<String, Object> seasonStats = new java.util.LinkedHashMap<>();
         seasonStats.put("totalPoints", Integer.parseInt((String) targetEntry.get("points")));
         seasonStats.put("wins", Integer.parseInt((String) targetEntry.get("wins")));
-        seasonStats.put("podiums", 0);
+        seasonStats.put("podiums", podiumCount);
         seasonStats.put("races", racesCount);
         seasonStats.put("rank", Integer.parseInt((String) targetEntry.get("position")));
 
+        java.util.Collections.reverse(raceResults);
         java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
         result.put("driver_number", driverNumber);
         result.put("full_name", givenName + " " + familyName);
