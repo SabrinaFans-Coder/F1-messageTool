@@ -42,18 +42,6 @@ public class JolpicaService {
     }
 
     /**
-     * 获取单场比赛结果
-     *
-     * @param year 赛季年份
-     * @param round 轮次
-     * @return Jolpica 原始 JSON
-     */
-    public String fetchRaceResult(int year, int round) {
-        String cacheKey = "jolpica_race_" + year + "_" + round;
-        return getFromCacheOrFetch(cacheKey, "/" + year + "/" + round + "/results.json");
-    }
-
-    /**
      * 获取车队积分榜
      *
      * @param year 赛季年份

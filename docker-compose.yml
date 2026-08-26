@@ -30,7 +30,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/f1_message
       TZ: Asia/Shanghai
     ports:
-      - "8080:8080"
+      - "8180:8180"
 
   frontend:
     build: ./frontend

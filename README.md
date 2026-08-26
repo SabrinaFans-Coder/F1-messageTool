@@ -54,7 +54,7 @@ docker-compose up -d --build
 ```
 
 Frontend: `http://localhost:3000`
-Backend API: `http://localhost:8080/api/f1/` · `/api/news`
+Backend API: `http://localhost:8180/api/f1/` · `/api/news`
 
 > PostgreSQL is exposed on host port **5433** (container-internal 5432) to avoid clashing with a local instance.
 
@@ -74,7 +74,7 @@ docker-compose up -d postgres
 # 2. Backend (needs DB_PASSWORD env var)
 cd backend && ./mvnw spring-boot:run   # Windows: .\mvnw.cmd spring-boot:run
 
-# 3. Frontend (dev server proxies /api -> localhost:8080)
+# 3. Frontend (dev server proxies /api -> localhost:8180)
 cd frontend && npm install && npm run dev
 ```
 

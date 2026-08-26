@@ -84,6 +84,7 @@ public class F1DataSyncService {
             }
 
             put(keyStandings(year), jolpicaService.fetchDriverStandings(year));
+            put(keyConstructorStandings(year), jolpicaService.fetchConstructorStandings(year));
             log.info("{} 赛季同步明细: 场次={}, 逐场结果={}", year, sessions.size(), syncedCount);
         } catch (Exception exception) {
             log.error("同步 {} 赛季数据失败", year, exception);
@@ -142,7 +143,8 @@ public class F1DataSyncService {
                 }
             }
             if (pulled > 0 || !snapshotRepository.existsByCacheKey(keyStandings(year))
-                    || !snapshotRepository.existsByCacheKey("f1:drivers:" + year)) {
+                    || !snapshotRepository.existsByCacheKey("f1:drivers:" + year)
+                    || !snapshotRepository.existsByCacheKey(keyConstructorStandings(year))) {
                 // 有新完赛，或上次同步中断导致快照缺失：补齐派生数据
                 String latestKey = snapshotRepository.findByCacheKeyStartingWith("f1:positions:").stream()
                         .map(s -> s.getCacheKey().substring("f1:positions:".length()))
@@ -153,6 +155,9 @@ public class F1DataSyncService {
                 }
                 if (!snapshotRepository.existsByCacheKey(keyStandings(year))) {
                     put(keyStandings(year), jolpicaService.fetchDriverStandings(year));
+                }
+                if (!snapshotRepository.existsByCacheKey(keyConstructorStandings(year))) {
+                    put(keyConstructorStandings(year), jolpicaService.fetchConstructorStandings(year));
                 }
                 log.info("增量同步完成, 新拉取场次: {}", pulled);
             }
@@ -172,4 +177,5 @@ public class F1DataSyncService {
     public static String keySessions(int year) { return "f1:sessions:" + year; }
     public static String keyPositions(int sessionKey) { return "f1:positions:" + sessionKey; }
     public static String keyStandings(int year) { return "f1:standings:" + year; }
+    public static String keyConstructorStandings(int year) { return "f1:constructor-standings:" + year; }
 }

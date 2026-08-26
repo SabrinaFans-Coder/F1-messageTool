@@ -119,6 +119,239 @@ public class F1QueryService {
     }
 
     /**
+     * 车手列表（本地快照版）：积分榜快照定顺序/国籍，车手名单快照补头像/涂装
+     */
+    public String getDriversList(int year) throws Exception {
+        ensureYear(year);
+        Map<Integer, Map<String, Object>> meta = readDriverMeta(year);
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        try {
+            com.fasterxml.jackson.databind.JsonNode lists = objectMapper
+                    .readTree(getByKey(F1DataSyncService.keyStandings(year)))
+                    .path("MRData").path("StandingsTable").path("StandingsLists");
+            if (lists.isArray() && lists.size() > 0) {
+                for (com.fasterxml.jackson.databind.JsonNode entry
+                        : lists.get(0).path("DriverStandings")) {
+                    int number = entry.path("Driver").path("permanentNumber").asInt(0);
+                    Map<String, Object> source = meta.getOrDefault(number, Map.of());
+                    Map<String, Object> driverInfo = new LinkedHashMap<>();
+                    driverInfo.put("driver_number", number);
+                    driverInfo.put("full_name", source.getOrDefault("full_name",
+                            entry.path("Driver").path("givenName").asText() + " "
+                                    + entry.path("Driver").path("familyName").asText()));
+                    driverInfo.put("name_acronym", source.getOrDefault("name_acronym",
+                            entry.path("Driver").path("code").asText("???")));
+                    driverInfo.put("team_name", source.getOrDefault("team_name",
+                            entry.path("Constructors").path(0).path("name").asText("Unknown")));
+                    driverInfo.put("team_colour", source.getOrDefault("team_colour", "888888"));
+                    driverInfo.put("headshot_url", source.getOrDefault("headshot_url", ""));
+                    driverInfo.put("nationality", entry.path("Driver").path("nationality").asText(""));
+                    result.add(driverInfo);
+                }
+            }
+        } catch (Exception exception) {
+            log.warn("积分榜快照解析失败, 降级为车手名单: {}", exception.getMessage());
+        }
+
+        // 积分榜缺失时兜底：直接用车手名单快照
+        if (result.isEmpty()) {
+            for (Map.Entry<Integer, Map<String, Object>> e : meta.entrySet()) {
+                Map<String, Object> driverInfo = new LinkedHashMap<>(e.getValue());
+                driverInfo.putIfAbsent("driver_number", e.getKey());
+                driverInfo.putIfAbsent("nationality", "");
+                result.add(driverInfo);
+            }
+        }
+        return objectMapper.writeValueAsString(result);
+    }
+
+    /**
+     * 赛季双榜单（本地快照版）：车手/车队积分榜均由 f1:standings 快照转换，无上游调用
+     */
+    public String getSeasonStandings(int year) throws Exception {
+        ensureYear(year);
+        com.fasterxml.jackson.databind.JsonNode driverLists = objectMapper
+                .readTree(getByKey(F1DataSyncService.keyStandings(year)))
+                .path("MRData").path("StandingsTable").path("StandingsLists");
+        com.fasterxml.jackson.databind.JsonNode constructorLists = objectMapper
+                .readTree(getByKey(F1DataSyncService.keyConstructorStandings(year)))
+                .path("MRData").path("StandingsTable").path("StandingsLists");
+
+        int racesCount = 0;
+        List<Map<String, Object>> driverRankings = new ArrayList<>();
+        List<Map<String, Object>> constructorRankings = new ArrayList<>();
+
+        if (driverLists.isArray() && driverLists.size() > 0) {
+            com.fasterxml.jackson.databind.JsonNode firstList = driverLists.get(0);
+            racesCount = firstList.path("round").asInt(0);
+
+            for (com.fasterxml.jackson.databind.JsonNode entry : firstList.path("DriverStandings")) {
+                Map<String, Object> ranking = new LinkedHashMap<>();
+                ranking.put("position", entry.path("position").asInt(0));
+                ranking.put("driver_number", entry.path("Driver").path("permanentNumber").asInt(0));
+                ranking.put("driver_name", entry.path("Driver").path("givenName").asText() + " "
+                        + entry.path("Driver").path("familyName").asText());
+                ranking.put("name_acronym", entry.path("Driver").path("code").asText("???"));
+                ranking.put("team_name", entry.path("Constructors").path(0).path("name").asText("Unknown"));
+                ranking.put("totalPoints", entry.path("points").asInt(0));
+                ranking.put("wins", entry.path("wins").asInt(0));
+                ranking.put("podiums", 0); // Jolpica 不提供领奖台数据
+                driverRankings.add(ranking);
+            }
+        }
+
+        if (constructorLists.isArray() && constructorLists.size() > 0) {
+            for (com.fasterxml.jackson.databind.JsonNode entry
+                    : constructorLists.get(0).path("ConstructorStandings")) {
+                Map<String, Object> ranking = new LinkedHashMap<>();
+                ranking.put("position", entry.path("position").asInt(0));
+                ranking.put("team_name", entry.path("Constructor").path("name").asText("Unknown"));
+                ranking.put("totalPoints", entry.path("points").asInt(0));
+                ranking.put("wins", entry.path("wins").asInt(0));
+                ranking.put("podiums", 0);
+                ranking.put("races", racesCount);
+                constructorRankings.add(ranking);
+            }
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("year", year);
+        result.put("racesCount", racesCount);
+        result.put("driverRankings", driverRankings);
+        result.put("constructorRankings", constructorRankings);
+        return objectMapper.writeValueAsString(result);
+    }
+
+    /**
+     * 车手详情（本地快照版）：
+     * 元数据取车手名单/积分榜快照，逐场结果取名次快照，全程不调上游 API
+     */
+    public String getDriverDetail(int driverNumber, int year) throws Exception {
+        ensureYear(year);
+
+        Map<String, Object> meta =
+                readDriverMeta(year).getOrDefault(driverNumber, new LinkedHashMap<>());
+
+        // 赛历快照：meeting_key → 名称/赛道信息
+        Map<Integer, Map<String, Object>> meetingsByKey = new LinkedHashMap<>();
+        for (Map<String, Object> meeting : objectMapper.readValue(
+                getByKey(F1DataSyncService.keyMeetings(year)),
+                new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {})) {
+            if (meeting.get("meeting_key") != null) {
+                meetingsByKey.put(((Number) meeting.get("meeting_key")).intValue(), meeting);
+            }
+        }
+
+        // 逐场正赛结果（按时间升序遍历，未同步的场次视为未完赛跳过）
+        int[] pointsTable = {25, 18, 15, 12, 10, 8, 6, 4, 2, 1};
+        List<Map<String, Object>> raceResults = new ArrayList<>();
+        int completedRounds = 0;
+        int round = 0;
+        for (Map<String, Object> session : readSessionsSortedAsc(year)) {
+            round++;
+            int sessionKey = ((Number) session.get("session_key")).intValue();
+            Optional<com.springboot.backend.entity.DataSnapshot> positionsSnap =
+                    snapshotRepository.findByCacheKey(F1DataSyncService.keyPositions(sessionKey));
+            if (positionsSnap.isEmpty()) {
+                continue;
+            }
+            completedRounds++;
+            Integer position = parseLatestPositions(positionsSnap.get().getJsonContent())
+                    .get(driverNumber);
+            if (position == null) {
+                continue;
+            }
+            Map<String, Object> meeting =
+                    meetingsByKey.getOrDefault(
+                            session.get("meeting_key") == null ? -1
+                                    : ((Number) session.get("meeting_key")).intValue(),
+                            Map.of());
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("meeting_name", meeting.getOrDefault("meeting_name", "Unknown"));
+            entry.put("circuit_short_name", meeting.getOrDefault("circuit_short_name", ""));
+            entry.put("position", position);
+            entry.put("round", round);
+            entry.put("session_key", sessionKey);
+            raceResults.add(entry);
+        }
+
+        // 官方积分数据优先取积分榜快照；缺失时从逐场结果估算
+        int totalPoints = 0;
+        int wins = 0;
+        int rank = 0;
+        String nationality = null;
+        boolean driverInStandings = false;
+        try {
+            Optional<com.springboot.backend.entity.DataSnapshot> standings =
+                    snapshotRepository.findByCacheKey(F1DataSyncService.keyStandings(year));
+            if (standings.isPresent()) {
+                com.fasterxml.jackson.databind.JsonNode lists = objectMapper
+                        .readTree(standings.get().getJsonContent())
+                        .path("MRData").path("StandingsTable").path("StandingsLists");
+                if (lists.isArray() && lists.size() > 0) {
+                    for (com.fasterxml.jackson.databind.JsonNode entry
+                            : lists.get(0).path("DriverStandings")) {
+                        if (entry.path("Driver").path("permanentNumber").asInt(0) == driverNumber) {
+                            totalPoints = entry.path("points").asInt(0);
+                            wins = entry.path("wins").asInt(0);
+                            rank = entry.path("position").asInt(0);
+                            nationality = entry.path("Driver").path("nationality").asText(null);
+                            driverInStandings = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch (Exception exception) {
+            log.warn("积分榜快照解析失败, 降级为逐场估算: {}", exception.getMessage());
+        }
+
+        boolean knownDriver = driverInStandings || !meta.isEmpty() || !raceResults.isEmpty();
+        if (!knownDriver) {
+            throw new com.springboot.backend.common.BusinessException(
+                    "未找到车手, driverNumber: " + driverNumber);
+        }
+
+        int podiums = 0;
+        if (!driverInStandings) {
+            for (Map<String, Object> r : raceResults) {
+                int position = ((Number) r.get("position")).intValue();
+                if (position >= 1 && position <= 10) {
+                    totalPoints += pointsTable[position - 1];
+                }
+                if (position == 1) wins++;
+            }
+        }
+        for (Map<String, Object> r : raceResults) {
+            if (((Number) r.get("position")).intValue() <= 3) {
+                podiums++;
+            }
+        }
+
+        Map<String, Object> seasonStats = new LinkedHashMap<>();
+        seasonStats.put("totalPoints", totalPoints);
+        seasonStats.put("wins", wins);
+        seasonStats.put("podiums", podiums);
+        seasonStats.put("races", completedRounds);
+        seasonStats.put("rank", rank);
+
+        java.util.Collections.reverse(raceResults);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("driver_number", driverNumber);
+        result.put("full_name", meta.getOrDefault("full_name", "Unknown"));
+        result.put("name_acronym", meta.getOrDefault("name_acronym", "???"));
+        result.put("team_name", meta.getOrDefault("team_name", "Unknown"));
+        result.put("team_colour", meta.getOrDefault("team_colour", "888888"));
+        result.put("headshot_url", meta.getOrDefault("headshot_url", ""));
+        result.put("country_code", meta.get("country_code"));
+        result.put("nationality", nationality);
+        result.put("seasonStats", seasonStats);
+        result.put("raceResults", raceResults);
+        return objectMapper.writeValueAsString(result);
+    }
+
+    /**
      * 逐轮累计积分趋势（全量车手，按最终积分降序）
      */
     public String getAllDriversPointsTrend(int year) throws Exception {

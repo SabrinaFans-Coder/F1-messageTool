@@ -11,7 +11,7 @@ spring:
       ddl-auto: update
     show-sql: false
 server:
-  port: 8080
+  port: 8180
 
 news:
   sync-enabled: true
